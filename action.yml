@@ -1,0 +1,61 @@
+name: "Wittig - Prepare Runner"
+author: "info@wittig.nl"
+description: "-"
+inputs:
+  PNPM_VERSION:
+    description: 'The version of PNPM to install'
+    required: false
+    default: '8'
+  DEPLOY_PROXY_SSH_KEY:
+    description: 'The SSH private key to connect to the deploy proxy (jump server)'
+    required: true
+  WITTIG_GITHUB_TOKEN:
+    description: 'The wittig NPM registry token to install @wittignl packages'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: 'Prepare deploy proxy ssh key'
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ env.INPUT_DEPLOY_PROXY_SSH_KEY }}" > ~/.ssh/id_deploy
+        chmod 700 ~/.ssh/id_deploy
+
+    - name: 'Checkout repository'
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: true
+        token: ${{ env.INPUT_WITTIG_GITHUB_TOKEN }}
+
+    - name: 'Prepare NPM registry for @wittignl packages'
+      shell: bash
+      run: |
+        echo "//npm.pkg.github.com/:_authToken=${{ env.INPUT_WITTIG_GITHUB_TOKEN }}" >> ~/.npmrc
+        echo "@wittignl:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+
+    - name: 'Install PNPM'
+      uses: pnpm/action-setup@v3
+      with:
+        version: ${{ env.INPUT_PNPM_VERSION }}
+        standalone: true
+        run_install: false
+
+    - name: 'Get pnpm store directory'
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+    - name: 'Setup pnpm cache'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: "${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: 'Install dependencies'
+      shell: bash
+      run: |
+        pnpm install --frozen-lockfile
