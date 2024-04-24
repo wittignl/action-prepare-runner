@@ -17,18 +17,18 @@ runs:
       with:
         fetch-depth: 0
         submodules: true
-        token: ${{ env.INPUT_WITTIG_GITHUB_TOKEN }}
+        token: ${{ inputs.WITTIG_GITHUB_TOKEN }}
 
     - name: 'Prepare NPM registry for @wittignl packages'
       shell: bash
       run: |
-        echo "//npm.pkg.github.com/:_authToken=${{ env.INPUT_WITTIG_GITHUB_TOKEN }}" >> ~/.npmrc
+        echo "//npm.pkg.github.com/:_authToken=${{ inputs.WITTIG_GITHUB_TOKEN }}" >> ~/.npmrc
         echo "@wittignl:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
     - name: 'Install PNPM'
       uses: pnpm/action-setup@v3
       with:
-        version: ${{ env.INPUT_PNPM_VERSION }}
+        version: ${{ inputs.PNPM_VERSION }}
         standalone: true
         run_install: false
 
