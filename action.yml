@@ -5,7 +5,7 @@ inputs:
   PNPM_VERSION:
     description: 'The version of PNPM to install'
     required: false
-    default: '8'
+    default: '10'
   WITTIG_GITHUB_TOKEN:
     description: 'The wittig NPM registry token to install @wittignl packages'
     required: true
@@ -15,7 +15,6 @@ runs:
     - name: 'Checkout repository'
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
         submodules: true
         token: ${{ inputs.WITTIG_GITHUB_TOKEN }}
 
@@ -26,7 +25,7 @@ runs:
         echo "@wittignl:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
     - name: 'Install PNPM'
-      uses: pnpm/action-setup@v3
+      uses: pnpm/action-setup@v4
       with:
         version: ${{ inputs.PNPM_VERSION }}
         standalone: true
