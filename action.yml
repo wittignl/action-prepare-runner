@@ -2,10 +2,10 @@ name: "Wittig - Prepare Runner"
 author: "info@wittig.nl"
 description: "-"
 inputs:
-  PNPM_VERSION:
-    description: 'The version of PNPM to install'
+  NODE_VERSION:
+    description: 'The version of Node.JS to install'
     required: false
-    default: '10'
+    default: '22.14.0'
   WITTIG_GITHUB_TOKEN:
     description: 'The wittig NPM registry token to install @wittignl packages'
     required: true
@@ -14,9 +14,9 @@ runs:
   steps:
     - name: 'Checkout repository'
       uses: actions/checkout@v4
-      with:
-        submodules: true
-        token: ${{ inputs.WITTIG_GITHUB_TOKEN }}
+        with:
+          submodules: true
+          token: ${{ inputs.WITTIG_GITHUB_TOKEN }}
 
     - name: 'Prepare NPM registry for @wittignl packages'
       shell: bash
@@ -24,25 +24,21 @@ runs:
         echo "//npm.pkg.github.com/:_authToken=${{ inputs.WITTIG_GITHUB_TOKEN }}" >> ~/.npmrc
         echo "@wittignl:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
-    - name: 'Install PNPM'
-      uses: pnpm/action-setup@v4
-      with:
-        version: ${{ inputs.PNPM_VERSION }}
-        standalone: true
-        run_install: false
-
-    - name: 'Get pnpm store directory'
+    - name: 'Remove use-node-version from .npmrc'
       shell: bash
       run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        sed -i '/use-node-version=.*/d' ./.npmrc
 
-    - name: 'Setup pnpm cache'
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.STORE_PATH }}
-        key: "${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+    - name: 'Install PNPM'
+      uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+    - name: 'Install Node.js'
+      uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.NODE_VERSION }}
+          cache: 'pnpm'
 
     - name: 'Install dependencies'
       shell: bash
